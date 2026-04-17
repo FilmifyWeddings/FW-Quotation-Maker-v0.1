@@ -9,7 +9,8 @@ import { Dashboard } from './components/Dashboard';
 import { AIControlPanel } from './components/AIControlPanel';
 import { QuotationCanvas } from './components/QuotationCanvas';
 import { fetchAllQuotations, saveQuotation, deleteQuotationFromCloud } from './services/sheetService';
-import { LogOut, ArrowLeft, Loader2, Save, Sparkles } from 'lucide-react';
+import { LogOut, ArrowLeft, Loader2, Save, Sparkles, Settings as SettingsIcon } from 'lucide-react';
+import { SettingsModal } from './components/SettingsModal';
 
 export default function App() {
   const [view, setView] = React.useState<'dashboard' | 'editor'>('dashboard');
@@ -17,6 +18,7 @@ export default function App() {
   const [currentQuote, setCurrentQuote] = React.useState<QuotationData>(BLANK_QUOTATION);
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
 
   // Load history on mount
   React.useEffect(() => {
@@ -91,6 +93,12 @@ export default function App() {
                 <span className="font-serif font-bold text-xl tracking-tight text-brand-olive uppercase">Filmify <span className="text-gray-400 font-sans text-xs tracking-[0.2em] font-medium ml-1">Pro</span></span>
              </div>
              <div className="flex items-center gap-4">
+                <button 
+                  onClick={() => setIsSettingsOpen(true)}
+                  className="p-2 hover:bg-brand-bg rounded-xl transition text-gray-400 hover:text-brand-olive"
+                >
+                  <SettingsIcon size={20} />
+                </button>
                 <div className="hidden md:block text-right">
                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Dashboard Active</p>
                    <p className="text-xs font-semibold">Sheets DB Connected</p>
@@ -126,6 +134,12 @@ export default function App() {
                </button>
                
                <div className="pointer-events-auto flex items-center gap-3">
+                 <button 
+                   onClick={() => setIsSettingsOpen(true)}
+                   className="bg-white/90 backdrop-blur shadow-xl rounded-2xl p-3 text-gray-400 hover:text-brand-olive transition border border-transparent hover:border-brand-olive/20"
+                 >
+                   <SettingsIcon size={16} />
+                 </button>
                  <div className="bg-white/90 backdrop-blur shadow-xl rounded-2xl px-5 py-3 text-xs flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${saving ? 'bg-amber-500 animate-pulse' : 'bg-green-500'}`} />
                     <span className="font-bold uppercase tracking-widest text-gray-500">{saving ? "Saving..." : "Ready to Print"}</span>
@@ -147,6 +161,8 @@ export default function App() {
           </div>
         </div>
       )}
+
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
 
       {/* Styles for no-scrollbar */}
       <style>{`

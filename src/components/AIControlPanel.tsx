@@ -1,6 +1,5 @@
 import React from 'react';
 import { Mic, MicOff, Sparkles, Save, Cloud, Loader2, Printer } from 'lucide-react';
-import { transcribeAudio } from '../services/whisperService';
 import { updateQuotationWithAI } from '../services/geminiService';
 import { QuotationData } from '../types';
 
@@ -20,22 +19,35 @@ export const AIControlPanel: React.FC<Props> = ({ currentData, onUpdate, onSave,
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+      const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
       const chunks: Blob[] = [];
 
-      recorder.ondataavailable = (e) => chunks.push(e.data);
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
       recorder.onstop = async () => {
-        const blob = new Blob(chunks, { type: 'audio/webm' });
-        setIsProcessing(true);
-        try {
-          const text = await transcribeAudio(blob);
-          setTranscription(text);
-          processWithAI(text);
-        } catch (err) {
-          console.error(err);
-        } finally {
-          setIsProcessing(false);
-        }
+        const audioBlob = new Blob(chunks, { type: 'audio/webm' });
+        
+        // Convert to base64 for Gemini
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = async () => {
+          const base64 = (reader.result as string).split(',')[1];
+          setIsProcessing(true);
+          try {
+            const updates = await updateQuotationWithAI(currentData, "", base64);
+            onUpdate({ ...currentData, ...updates });
+            setTranscription("Updated via Voice Command");
+          } catch (err) {
+            console.error(err);
+            alert("AI processed properly nahi hua. Please try again.");
+          } finally {
+            setIsProcessing(false);
+          }
+        };
+
+        stream.getTracks().forEach(t => t.stop());
       };
 
       recorder.start();
@@ -47,10 +59,9 @@ export const AIControlPanel: React.FC<Props> = ({ currentData, onUpdate, onSave,
   };
 
   const stopRecording = () => {
-    if (mediaRecorder) {
+    if (mediaRecorder && isRecording) {
       mediaRecorder.stop();
       setIsRecording(false);
-      mediaRecorder.stream.getTracks().forEach(t => t.stop());
     }
   };
 
