@@ -1,6 +1,6 @@
 import React from 'react';
 import { Mic, MicOff, Sparkles, Save, Cloud, Loader2, Printer } from 'lucide-react';
-import { updateQuotationWithAI } from '../services/geminiService';
+import { updateQuotationWithAI, transcribeWithGroq } from '../services/geminiService';
 import { QuotationData } from '../types';
 
 interface Props {
@@ -29,28 +29,26 @@ export const AIControlPanel: React.FC<Props> = ({ currentData, onUpdate, onSave,
       recorder.onstop = async () => {
         const audioBlob = new Blob(chunks, { type: 'audio/webm' });
         
-        // Convert to base64 for Gemini
-        const reader = new FileReader();
-        reader.readAsDataURL(audioBlob);
-        reader.onloadend = async () => {
-          const base64 = (reader.result as string).split(',')[1];
-          setIsProcessing(true);
-          try {
-            const updates = await updateQuotationWithAI(currentData, "", base64);
-            onUpdate({ ...currentData, ...updates });
-            setTranscription("Updated via Voice Command");
-          } catch (err: any) {
-            console.error(err);
-            const msg = err.message || "";
-            if (msg.includes("401") || msg.includes("key")) {
-              alert("Settings mein check karein, Gemini API key sahi nahi hai.");
-            } else {
-              alert("Gemini error: Voice command analyze nahi hua. Ek baar phir try karein.");
-            }
-          } finally {
-            setIsProcessing(false);
+        setIsProcessing(true);
+        try {
+          // 1. Transcription via Groq (Whisper Large V3)
+          const text = await transcribeWithGroq(audioBlob);
+          setTranscription(text);
+          
+          // 2. Process with Gemini
+          const updates = await updateQuotationWithAI(currentData, text);
+          onUpdate({ ...currentData, ...updates });
+        } catch (err: any) {
+          console.error(err);
+          const msg = err.message || "";
+          if (msg.includes("Groq API Key")) {
+            alert("Voice accuracy ke liye please Settings mein GROQ API KEY daalein (It's Free!).");
+          } else {
+            alert("Voice capture fail hua. Phir se try karein.");
           }
-        };
+        } finally {
+          setIsProcessing(false);
+        }
 
         stream.getTracks().forEach(t => t.stop());
       };

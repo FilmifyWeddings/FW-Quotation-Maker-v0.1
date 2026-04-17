@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, X, Save, Lock, Database, Sparkles } from 'lucide-react';
+import { Settings, X, Save, Lock, Database, Sparkles, Mic } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
@@ -9,6 +9,7 @@ interface Props {
 export const SettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const [keys, setKeys] = React.useState({
     GEMINI_API_KEY: localStorage.getItem('GEMINI_API_KEY') || '',
+    GROQ_API_KEY: localStorage.getItem('GROQ_API_KEY') || '',
     GOOGLE_SHEETS_URL: localStorage.getItem('GOOGLE_SHEETS_URL') || '',
   });
 
@@ -16,10 +17,11 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
   const handleSave = () => {
     localStorage.setItem('GEMINI_API_KEY', keys.GEMINI_API_KEY);
+    localStorage.setItem('GROQ_API_KEY', keys.GROQ_API_KEY);
     localStorage.setItem('GOOGLE_SHEETS_URL', keys.GOOGLE_SHEETS_URL);
-    alert("Settings updated! The app will now use these keys.");
+    alert("Settings updated!");
     onClose();
-    window.location.reload(); // Reload to apply changes across services
+    window.location.reload();
   };
 
   return (
@@ -57,7 +59,26 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 className="w-full bg-gray-50 border-2 border-transparent focus:border-brand-olive/20 focus:bg-white rounded-2xl py-4 pl-12 pr-4 text-sm font-sans transition-all outline-none"
               />
             </div>
-            <p className="text-[9px] text-gray-400 ml-1">Used for Audio analysis and JSON updates. <a href="https://aistudio.google.com/" target="_blank" className="text-brand-olive underline">Get key here.</a></p>
+            <p className="text-[9px] text-gray-400 ml-1">Used for Audio analysis and JSON updates. <a href="https://aistudio.google.com/" target="_blank" className="text-brand-olive underline" rel="noreferrer">Get key here.</a></p>
+          </div>
+
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
+              <Mic size={12} className="text-indigo-500" /> Groq API Key (Free Whisper)
+            </label>
+            <div className="relative">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300">
+                <Lock size={16} />
+              </div>
+              <input 
+                type="password"
+                value={keys.GROQ_API_KEY}
+                onChange={(e) => setKeys({ ...keys, GROQ_API_KEY: e.target.value })}
+                placeholder="Paste Groq Key here (for Perfect Voice-to-Text)..."
+                className="w-full bg-gray-50 border-2 border-transparent focus:border-brand-olive/20 focus:bg-white rounded-2xl py-4 pl-12 pr-4 text-sm font-sans transition-all outline-none"
+              />
+            </div>
+            <p className="text-[9px] text-gray-400 ml-1">Proprietary Whisper implementation (Unlimited & Free). <a href="https://console.groq.com/keys" target="_blank" className="text-brand-olive underline" rel="noreferrer">Get Groq Key.</a></p>
           </div>
 
           <div className="space-y-2">

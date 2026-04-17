@@ -2,6 +2,8 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { QuotationData } from "../types";
 
 const getApiKey = () => localStorage.getItem('GEMINI_API_KEY') || process.env.GEMINI_API_KEY || "";
+const getGroqKey = () => localStorage.getItem('GROQ_API_KEY') || "";
+
 const getAI = () => new GoogleGenAI({ apiKey: getApiKey() });
 
 const QUOTATION_SCHEMA: any = {
@@ -43,6 +45,32 @@ const QUOTATION_SCHEMA: any = {
   },
   required: ["clientName", "finalAmount", "functions", "finalDeliverables"]
 };
+
+export async function transcribeWithGroq(audioBlob: Blob): Promise<string> {
+  const apiKey = getGroqKey();
+  if (!apiKey) throw new Error("Groq API Key missing. Please set it in Settings for perfect voice.");
+
+  const formData = new FormData();
+  formData.append("file", audioBlob, "audio.webm");
+  formData.append("model", "whisper-large-v3");
+  formData.append("language", "hi"); // Better for Hindi/English mix
+
+  const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || "Transcription failed");
+  }
+
+  const result = await response.json();
+  return result.text;
+}
 
 export async function updateQuotationWithAI(currentData: QuotationData, prompt: string, audioBase64?: string): Promise<QuotationData> {
   const ai = getAI();
