@@ -1,0 +1,6 @@
+{
+  "name": "Filmify Pro - Wedding Quotation Maker",
+  "description": "A premium Canva-style quotation builder for wedding photographers with AI voice-to-text edits and Google Sheets integration.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": []
+}

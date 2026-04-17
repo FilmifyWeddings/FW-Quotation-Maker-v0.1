@@ -1,0 +1,42 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-brand-bg: #f4f3ef;
+  --color-brand-olive: #5a5646;
+  --color-brand-accent: #6b705c;
+  --color-brand-dark: #333333;
+  --color-brand-footer: #806e53;
+
+  --font-serif: "Playfair Display", serif;
+  --font-sans: "Montserrat", sans-serif;
+}
+
+@layer base {
+  body {
+    @apply font-sans bg-gray-100 text-brand-dark;
+  }
+}
+
+@layer components {
+  /* A4 Page Simulation */
+  .a4-page {
+    @apply w-[210mm] min-h-[297mm] bg-brand-bg shadow-2xl mx-auto my-8 relative overflow-hidden flex flex-col;
+    /* Using paper texture if needed */
+    background-image: url('https://www.transparenttextures.com/patterns/cream-paper.png');
+  }
+
+  @media print {
+    body { background: white; }
+    .no-print { display: none !important; }
+    .a4-page {
+      margin: 0;
+      box-shadow: none;
+      page-break-after: always;
+    }
+  }
+
+  [contenteditable="true"]:focus {
+    @apply outline-none ring-1 ring-brand-olive/30 bg-white/50;
+  }
+}
