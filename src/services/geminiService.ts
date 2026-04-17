@@ -47,41 +47,39 @@ const QUOTATION_SCHEMA: any = {
 export async function updateQuotationWithAI(currentData: QuotationData, prompt: string, audioBase64?: string): Promise<QuotationData> {
   const ai = getAI();
   
-  // Use pro model for complex reasoning and direct parsing from messy text
-  const modelName = "gemini-3.1-pro-preview";
+  // Using Flash-3 which is highly available and fast for real-time app use
+  const modelName = "gemini-3-flash-preview";
 
   const systemInstruction = `
-    ROLE: You are the Lead Studio Manager for 'Filmify Weddings'. You excel at taking messy, informal, or conversational messages and turning them into professional structured wedding quotations.
-
-    TASKS:
-    1. EXTRACT CLIENT: Find the client name (e.g., 'Mittal' from 'Hi Mittal').
-    2. RECONSTRUCT FUNCTIONS: Scan the entire message for dates (e.g., 25th Jan) and event types (e.g., Haldi).
-       - Create a NEW array of functions based on the message. 
-       - If the message says 'Haldi bride on 26th Jan', 'Sangeet on 26th Jan (Evening)', create TWO separate entries.
-       - 'services' should include items like 'Traditional Photography', 'Candid', 'Drone', etc., mentioned under each event.
-    3. DELIVERABLES: List every item mentioned under 'Deliverables' or 'Requirement' sections.
-    4. PRICING: Extract the final quote amount. Format it as a number.
-    5. TERMS: If the message mentions delivery times (e.g., '1 Year Access') or album types, update terms fields.
+    ROLE: Lead Event Manager for Filmify Pro.
+    GOAL: Rebuild the structured quotation JSON based on the user's latest messy message or voice note.
     
-    IMPORTANT: 
-    - You MUST overwrite the existing 'functions' and 'finalDeliverables' with the new ones mentioned in the message. 
-    - Do NOT just append; the user wants the quotation to REFLECT the message exactly.
-    - If a time is mentioned like '10:00 AM to 11 pm', capture it precisely.
-    - RETURN ONLY THE JSON.
+    PARSING RULES:
+    1. CLIENT: Identify the name from the greeting (e.g., 'Hi Mittal' -> clientName: 'Mittal').
+    2. EVENTS: Scan for specific dates (25th Jan, 26th Jan, etc.) and event names. For each unique event:
+       - Extract 'date', 'name', and 'time'.
+       - Under 'services', add the requirements found under that specific date (Photography, Videography, Drone, etc.).
+    3. PRICE: Extract the total amount mentioned (e.g., ₹1,45,000 -> 145000).
+    4. DELIVERABLES: List every single deliverable mentioned (Alum, raw data, best edited photos, cinematic video, calendar, etc.) into the 'finalDeliverables' array.
+    5. DATA INTEGRITY: Return the FULL JSON. Ensure all fields in the schema are present.
+    
+    IMPORTANT: The user wants their message to REFLECT in the editor immediately. Overwrite existing functions/deliverables if the new request describes a complete list.
   `;
 
   const parts: any[] = [];
   if (audioBase64) {
-    parts.push({ inlineData: { data: audioBase64, mimeType: "audio/webm" } });
-    parts.push({ text: "AUDIO_INPUT: Listen to this instruction carefully and apply it to the quotation data." });
+    parts.push({ 
+      inlineData: { data: audioBase64, mimeType: "audio/webm" } 
+    });
+    parts.push({ text: "AUDIO_INPUT: Listen and extract the entire quotation structure from this voice note." });
   }
 
   if (prompt) {
-    parts.push({ text: `CONVERSATIONAL_TEXT_INPUT: "${prompt}"` });
+    parts.push({ text: `TEXT_INPUT: "${prompt}"` });
   }
 
-  parts.push({ text: `CURRENT_STATE_JSON: ${JSON.stringify(currentData)}` });
-  parts.push({ text: "INSTRUCTION: Update the current state based on the input. Return the full new state matching the schema." });
+  parts.push({ text: `CURRENT_STATE: ${JSON.stringify(currentData)}` });
+  parts.push({ text: "PROCESS: Analyze the text input and return the updated Quotation JSON. Overwrite lists if the input describes a full set of events/deliverables." });
 
   try {
     const response = await ai.models.generateContent({
@@ -95,11 +93,11 @@ export async function updateQuotationWithAI(currentData: QuotationData, prompt: 
     });
 
     const text = response.text;
-    if (!text) throw new Error("AI fail.");
+    if (!text) throw new Error("AI returned empty result");
     
     const parsed = JSON.parse(text);
     
-    // Safety check for IDs
+    // Auto-generate IDs for new items
     const sanitizedFunctions = (parsed.functions || []).map((f: any) => ({
       ...f,
       id: f.id || Math.random().toString(36).substr(2, 9)
@@ -112,7 +110,7 @@ export async function updateQuotationWithAI(currentData: QuotationData, prompt: 
       id: currentData.id
     };
   } catch (error) {
-    console.error("Advanced Parsing Failed:", error);
+    console.error("Gemini Critical Error:", error);
     throw error;
   }
 }

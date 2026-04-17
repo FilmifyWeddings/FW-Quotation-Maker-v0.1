@@ -39,9 +39,14 @@ export const AIControlPanel: React.FC<Props> = ({ currentData, onUpdate, onSave,
             const updates = await updateQuotationWithAI(currentData, "", base64);
             onUpdate({ ...currentData, ...updates });
             setTranscription("Updated via Voice Command");
-          } catch (err) {
+          } catch (err: any) {
             console.error(err);
-            alert("AI processed properly nahi hua. Please try again.");
+            const msg = err.message || "";
+            if (msg.includes("401") || msg.includes("key")) {
+              alert("Settings mein check karein, Gemini API key sahi nahi hai.");
+            } else {
+              alert("Gemini error: Voice command analyze nahi hua. Ek baar phir try karein.");
+            }
           } finally {
             setIsProcessing(false);
           }
@@ -71,8 +76,14 @@ export const AIControlPanel: React.FC<Props> = ({ currentData, onUpdate, onSave,
     try {
       const updates = await updateQuotationWithAI(currentData, text);
       onUpdate({ ...currentData, ...updates });
-    } catch (err) {
-      alert("Gemini failed to process request.");
+    } catch (err: any) {
+      console.error(err);
+      const msg = err.message || "";
+      if (msg.includes("401") || msg.includes("key")) {
+        alert("Settings mein check karein, Gemini API key sahi nahi hai.");
+      } else {
+        alert("Gemini busy hai ya prompt bahut bada hai. Phir se try karein.");
+      }
     } finally {
       setIsProcessing(false);
     }
