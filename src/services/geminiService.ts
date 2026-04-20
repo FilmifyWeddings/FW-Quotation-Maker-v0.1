@@ -76,23 +76,25 @@ export async function transcribeWithGroq(audioBlob: Blob): Promise<string> {
 export async function updateQuotationWithAI(currentData: QuotationData, prompt: string, audioBase64?: string): Promise<QuotationData> {
   const ai = getAI();
   
-  // Using Flash-3 which is highly available and fast for real-time app use
-  const modelName = "gemini-3-flash-preview";
+  // Use 3.1 Pro for the highest level of reasoning and 'Speech Repair'
+  const modelName = "gemini-3.1-pro-preview";
 
   const systemInstruction = `
-    ROLE: Lead Event Manager for Filmify Pro.
-    GOAL: Rebuild the structured quotation JSON based on the user's latest messy message or voice note.
+    ROLE: You are the 'Lead Studio Manager' for 'Filmify Weddings'. 
+    EXPERTISE: You are an expert at repairing messy, broken, or garbled voice transcriptions and turning them into professional Wedding Quotations.
     
-    PARSING RULES:
-    1. CLIENT: Identify the name from the greeting (e.g., 'Hi Mittal' -> clientName: 'Mittal').
-    2. EVENTS: Scan for specific dates (25th Jan, 26th Jan, etc.) and event names. For each unique event:
-       - Extract 'date', 'name', and 'time'.
-       - Under 'services', add the requirements found under that specific date (Photography, Videography, Drone, etc.).
-    3. PRICE: Extract the total amount mentioned (e.g., ₹1,45,000 -> 145000).
-    4. DELIVERABLES: List every single deliverable mentioned (Alum, raw data, best edited photos, cinematic video, calendar, etc.) into the 'finalDeliverables' array.
-    5. DATA INTEGRITY: Return the FULL JSON. Ensure all fields in the schema are present.
+    TASKS:
+    1. SPEECH REPAIR: The input might contain voice-to-text errors (e.g., 'Haldi' might be heard as 'Healthy'). use your knowledge of Indian weddings to repair these typos.
+    2. ENTITY EXTRACTION:
+       - Client Name: e.g., 'Hi Mittal' -> 'Mittal'.
+       - Functions: Extract every event, date, and time. Overwrite existing ones if the new request covers the full flow.
+       - Services: Map requirements like 'Traditional Photo', 'Drone', 'Candid' to each specific event.
+       - Amount: Extract the final quote number accurately.
+    3. DATA COMPLETENESS: Return the FULL valid JSON.
     
-    IMPORTANT: The user wants their message to REFLECT in the editor immediately. Overwrite existing functions/deliverables if the new request describes a complete list.
+    IMPORTANT: 
+    - If the user provides a detailed list, it means they want to RE-SYNC the quotation to that list. 
+    - Be smart about dates. If they say '25th Jan' and later 'next day', use logic to determine the date.
   `;
 
   const parts: any[] = [];
