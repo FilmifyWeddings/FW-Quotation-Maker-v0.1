@@ -19,7 +19,16 @@ export const AIControlPanel: React.FC<Props> = ({ currentData, onUpdate, onSave,
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      
+      // Determine supported mime-type for better quality across devices
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
+        ? 'audio/webm;codecs=opus' 
+        : 'audio/mp4';
+        
+      const recorder = new MediaRecorder(stream, { 
+        mimeType,
+        audioBitsPerSecond: 128000 
+      });
       const chunks: Blob[] = [];
 
       recorder.ondataavailable = (e) => {
@@ -27,9 +36,10 @@ export const AIControlPanel: React.FC<Props> = ({ currentData, onUpdate, onSave,
       };
 
       recorder.onstop = async () => {
-        const audioBlob = new Blob(chunks, { type: 'audio/webm' });
+        const audioBlob = new Blob(chunks, { type: mimeType });
         
         setIsProcessing(true);
+        setTranscription("Analyzing voice...");
         try {
           // 1. Transcription via Groq (Whisper Large V3)
           const text = await transcribeWithGroq(audioBlob);

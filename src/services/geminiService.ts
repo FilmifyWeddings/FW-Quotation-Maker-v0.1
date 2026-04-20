@@ -51,9 +51,10 @@ export async function transcribeWithGroq(audioBlob: Blob): Promise<string> {
   if (!apiKey) throw new Error("Groq API Key missing. Please set it in Settings for perfect voice.");
 
   const formData = new FormData();
-  formData.append("file", audioBlob, "audio.webm");
+  // Using a more standard filename to help the API identify the container
+  formData.append("file", audioBlob, "recording.m4a");
   formData.append("model", "whisper-large-v3");
-  formData.append("language", "hi"); // Better for Hindi/English mix
+  // Removed fixed language to allow auto-detection of Hindi/English mix for better accuracy
 
   const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
     method: "POST",
